@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'uploadlink
+
+  SAM template for uploadlink Lambda function
+
+  '
+Globals:
+  Function:
+    Timeout: 6
+    Environment:
+      Variables:
+        BUCKETNAME: unicorn3001
+        REKOGNITIONCOLLECTIONNAME: Unicornfaces3001
+        DYNAMOTABLENAME: UnicornfaceDB3001
+        REKOGNITIONFACESIMILARITYTHRESHOLD: 90
+Resources:
+  AutoCheckInAPI:
+    Type: AWS::Serverless::Api
+    DependsOn: GetLinkFunction
+    Properties:
+      Name: AutoCheckInAPI
+      Cors:
+        AllowMethods: '''POST, GET'''
+        AllowHeaders: '''*'''
+        AllowOrigin: '''*'''
+      StageName: Prod
+  GetLinkFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: GetLinkFunction
+      Handler: app.lambdaHandler
+      Runtime: nodejs12.x
+      Events:
+        GetLink:
+          Type: Api
+          Properties:
+            Path: /uploadlink
+            Method: get
+            RestApiId:
+              Ref: AutoCheckInAPI
+  RegisterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: RegisterFunction
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      MemorySize: 512
+      Events:
+        Register:
+          Type: Api
+          Properties:
+            Path: /register
+            Method: POST
+            RestApiId:
+              Ref: AutoCheckInAPI
+  CheckInFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: CheckInFunction
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      MemorySize: 512
+      Events:
+        Register:
+          Type: Api
+          Properties:
+            Path: /checkin
+            Method: POST
+            RestApiId:
+              Ref: AutoCheckInAPI
+  CreateCollectionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: CreateCollectionFunction
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Events:
+        Register:
+          Type: Api
+          Properties:
+            Path: /createcollection
+            Method: GET
+            RestApiId:
+              Ref: AutoCheckInAPI
